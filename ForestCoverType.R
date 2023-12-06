@@ -149,8 +149,8 @@ class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula a
   step_select(-Vertical_Distance_To_Hydrology, - Horizontal_Distance_To_Hydrology) %>%
   step_zv(all_predictors()) %>% # eliminate zero variance predictors
   step_nzv(freq_cut = 15070/50) %>%
-  step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) %>%
-  step_pca(all_predictors(), threshold = 0.8) #%>% # Threshold between 0 and 1, test run for classification rf
+  step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
+  #step_pca(all_predictors(), threshold = 0.8) #%>% # Threshold between 0 and 1, test run for classification rf
   # step_smote(all_outcomes(), neighbors = 5)
 
 prepped_recipe <- prep(class_rf_recipe) # preprocessing new data
