@@ -27,18 +27,13 @@ library(ggplot2)
 library(parsnip)
 ##############################
 
-
-# Import Dataset:
-data_train <- vroom("./data/train.csv") %>%
-  mutate(Cover_Type=factor(Cover_Type))# grab training data
-
-# data_train
-
-
 ###############
 ##### EDA #####
 ###############
 
+# data_train <- vroom("./data/train.csv")
+# view(data_train)
+# 
 # cor_matrix <- cor(data_train)
 # 
 # # Create corr heatmap
@@ -83,14 +78,65 @@ data_train <- vroom("./data/train.csv") %>%
 #         xlab='Cover Type',
 #         ylab='noon shade')
 
+##########
+# multicollinearity EDA
+##########
+# data_wild_areas <- data_train %>%
+#   select(c('Wilderness_Area1',
+#            'Wilderness_Area2',
+#            'Wilderness_Area3',
+#            'Wilderness_Area4'))
+# 
+# cor_matrix_wild_areas <- cor(data_wild_areas)
+# 
+# # Create corr heatmap
+# heatmap(cor_matrix_wild_areas,
+#         col = colorRampPalette(c('blue', 'white', 'green'))(100),
+#         margins = c(5, 5),
+#         Rowv = NA,
+#         Colv = NA,
+#         cexRow = 0.6,
+#         cexCol = 0.6)
+
+
+#############################################
+##### Find value frequencies of factors #####
+#############################################
+
+# data_train['Id']
+# 
+# column_unique_df <- data.frame(column_name = character(0), frequency = list())
+# # column_unique_df$frequency <- NA
+# 
+# for(column in colnames(data_train)){
+#     unique_vals <- table(data_train[[column]])
+#     sorted_vals <- sort(unique_vals, decreasing = TRUE)
+#     second_largest <- as.numeric(sorted_vals[2])[1]
+#     
+#     new_row <- data.frame(column_name = column, frequency = second_largest)
+#     
+#     colnames(new_row) <- colnames(column_unique_df)
+#     
+#     column_unique_df <- rbind(column_unique_df, new_row)
+#     
+# }
+# 
+# colnames(column_unique_df) <- c('column_name', 'second_freq')
+# view(column_unique_df)
+# 
+# sort(table(data_train[['Horizontal_Distance_To_Roadways']]), decreasing = TRUE)
 
 #######################
 ##### Recipe/Bake #####
 #######################
 
+# Import Dataset:
+data_train <- vroom("./data/train.csv") %>%
+  mutate(Cover_Type=factor(Cover_Type))# grab training data
+
 ncol(data_train)
 # view(data_train)
-data_train$Cover_Type
+# data_train$Cover_Type
 
 
 rFormula <- Cover_Type ~ .
@@ -99,7 +145,8 @@ rFormula <- Cover_Type ~ .
 class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula and dataset
   step_mutate_at(c(12:55), fn = factor) %>%
   #step_other(all_nominal_predictors(), threshold = .001) %>%
-  step_zv(all_predictors()) %>% # eliminate zero variance predictors
+  # step_zv(all_predictors()) %>% # eliminate zero variance predictors %>%
+  step_nzv(freq_cut = 15070/50) %>%
   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
   #step_pca(all_predictors(), threshold = 0.8) %>% # Threshold between 0 and 1, test run for classification rf
   # step_smote(all_outcomes(), neighbors = 5)
