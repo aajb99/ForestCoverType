@@ -150,8 +150,8 @@ class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula a
   step_zv(all_predictors()) %>% # eliminate zero variance predictors
   step_nzv(freq_cut = 15070/50) %>%
   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
-  #step_pca(all_predictors(), threshold = 0.8) #%>% # Threshold between 0 and 1, test run for classification rf
-  # step_smote(all_outcomes(), neighbors = 5)
+#step_pca(all_predictors(), threshold = 0.8) #%>% # Threshold between 0 and 1, test run for classification rf
+# step_smote(all_outcomes(), neighbors = 5)
 
 prepped_recipe <- prep(class_rf_recipe) # preprocessing new data
 baked_data1 <- bake(prepped_recipe, new_data = data_train)
@@ -197,8 +197,8 @@ final_wf <- pretune_workflow %>%
 data_test <- vroom("./data/test.csv") # grab testing data
 
 fct_predictions <- predict(final_wf,
-                              new_data=data_test,
-                              type="class") %>% # "class" or "prob"
+                           new_data=data_test,
+                           type="class") %>% # "class" or "prob"
   mutate(Id = data_test$Id) %>%
   #mutate(ACTION = ifelse(.pred_1 > .95, 1, 0)) %>%
   mutate(Cover_Type = .pred_class) %>%
@@ -207,7 +207,5 @@ fct_predictions <- predict(final_wf,
 vroom_write(fct_predictions, "./data/for_covertype_pred_rf2.csv", delim = ",")
 # save(file = 'amazon_penalized_wf.RData', list = c('final_wf'))
 # load('amazon_penalized_wf.RData')
-
-
 
 

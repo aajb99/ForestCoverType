@@ -145,7 +145,7 @@ rFormula <- Cover_Type ~ .
 class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula and dataset
   step_mutate_at(c(12:55), fn = factor) %>%
   #step_other(all_nominal_predictors(), threshold = .001) %>%
-  step_mutate(distance = sqrt((Vertical_Distance_To_Hydrology)^2) + (Horizontal_Distance_To_Hydrology)^2) %>%
+  step_mutate(distance = sqrt(((Vertical_Distance_To_Hydrology)^2) + ((Horizontal_Distance_To_Hydrology)^2))) %>%
   step_select(-Vertical_Distance_To_Hydrology, - Horizontal_Distance_To_Hydrology) %>%
   step_zv(all_predictors()) %>% # eliminate zero variance predictors
   step_nzv(freq_cut = 15070/50) %>%
