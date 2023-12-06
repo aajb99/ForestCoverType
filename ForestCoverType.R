@@ -145,7 +145,7 @@ rFormula <- Cover_Type ~ .
 class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula and dataset
   step_mutate_at(c(12:55), fn = factor) %>%
   #step_other(all_nominal_predictors(), threshold = .001) %>%
-  # step_zv(all_predictors()) %>% # eliminate zero variance predictors %>%
+  step_zv(all_predictors()) %>% # eliminate zero variance predictors
   step_nzv(freq_cut = 15070/50) %>%
   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
   #step_pca(all_predictors(), threshold = 0.8) %>% # Threshold between 0 and 1, test run for classification rf
