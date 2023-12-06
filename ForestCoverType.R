@@ -77,10 +77,10 @@ library(parsnip)
 #         main='Cover type by noon shade',
 #         xlab='Cover Type',
 #         ylab='noon shade')
-
-##########
-# multicollinearity EDA
-##########
+# 
+# ##########
+# # multicollinearity EDA
+# ##########
 # data_wild_areas <- data_train %>%
 #   select(c('Wilderness_Area1',
 #            'Wilderness_Area2',
@@ -145,6 +145,8 @@ rFormula <- Cover_Type ~ .
 class_rf_recipe <- recipe(rFormula, data = data_train) %>% # set model formula and dataset
   step_mutate_at(c(12:55), fn = factor) %>%
   #step_other(all_nominal_predictors(), threshold = .001) %>%
+  step_mutate(distance = sqrt((Vertical_Distance_To_Hydrology)^2) + (Horizontal_Distance_To_Hydrology)^2) %>%
+  step_select(-Vertical_Distance_To_Hydrology, - Horizontal_Distance_To_Hydrology) %>%
   step_zv(all_predictors()) %>% # eliminate zero variance predictors
   step_nzv(freq_cut = 15070/50) %>%
   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
@@ -163,7 +165,7 @@ baked_data1 <- bake(prepped_recipe, new_data = data_train)
 
 class_rf_mod <- rand_forest(mtry = tune(),
                             min_n = tune(),
-                            trees = 500) %>% #Type of model
+                            trees = 1000) %>% #Type of model
   set_engine('ranger') %>%
   set_mode('classification')
 
@@ -177,7 +179,7 @@ tuning_grid <- grid_regular(mtry(range = c(2,ncol(data_train)-1)),
                             levels = 3) ## L^2 total tuning possibilities
 
 # Split data for CV
-folds <- vfold_cv(data_train, v = 3, repeats = 1)
+folds <- vfold_cv(data_train, v = 5, repeats = 1)
 
 # Run CV
 CV_results <- pretune_workflow %>%
@@ -205,7 +207,6 @@ fct_predictions <- predict(final_wf,
 vroom_write(fct_predictions, "./data/for_covertype_pred_rf2.csv", delim = ",")
 # save(file = 'amazon_penalized_wf.RData', list = c('final_wf'))
 # load('amazon_penalized_wf.RData')
-
 
 
 
