@@ -54,11 +54,12 @@ baked_data_boost <- bake(prepped_recipe_boost, new_data = data_train)
 ##### Boosting #####
 ####################
 
-boost_model <- boost_tree(trees = 500,
+boost_model <- boost_tree(trees = 100,
                           tree_depth = 5,
                           learn_rate = .05,
                           mtry = 15,
-                          min_n = 12
+                          min_n = 12,
+                          loss_reduction = 0
                           ) %>%
   set_engine("lightgbm") %>% #or "xgboost" but lightgbm is faster
   set_mode("classification")

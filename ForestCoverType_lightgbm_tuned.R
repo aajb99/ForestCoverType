@@ -25,7 +25,9 @@ library(embed)
 library(themis)
 library(ggplot2)
 library(parsnip)
+install.packages('bonsai')
 library(bonsai)
+install.packages('lightgbm')
 library(lightgbm)
 ##############################
 
