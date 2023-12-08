@@ -88,7 +88,7 @@ tuning_grid <- grid_regular(mtry(range = c(2,ncol(data_train)-1)),
                             levels = 3) ## L^2 total tuning possibilities
 
 # Run CV
-rf_final_mod <- pretune_workflow %>%
+rf_final_mod <- rf_pretune_wf %>%
   tune_grid(resamples = folds,
             grid = tuning_grid,
             metrics = metric_set(roc_auc))
@@ -96,7 +96,7 @@ rf_final_mod <- pretune_workflow %>%
 bestTune <- CV_results %>%
   select_best('roc_auc')
 
-final_wf <- pretune_workflow %>%
+final_wf <- rf_pretune_wf %>%
   finalize_workflow(bestTune) %>%
   fit(data = data_train)
 
@@ -138,7 +138,7 @@ boost_final_mod <- fit_resamples(boost_wf,
 
 models_stack <- 
   stacks() %>%
-  add_candidates(rf_final_mod) %>%
+  add_candidates(rf_final_wf) %>%
   add_candidates(boost_final_mod)
 
 
