@@ -74,7 +74,7 @@ folds <- vfold_cv(data_train, v = 5, repeats = 1)
 
 class_rf_mod <- rand_forest(mtry = 15,
                             min_n = 1,
-                            trees = 1000) %>% #Type of model
+                            trees = 500) %>% #Type of model
   set_engine('ranger') %>%
   set_mode('classification')
 
@@ -83,7 +83,7 @@ rf_pretune_wf <- workflow() %>%
   add_model(class_rf_mod)
 
 # Run CV
-rf_final_mod <- fit_resamples(rf_pretune_wf,
+rf_results <- fit_resamples(rf_pretune_wf,
                               resamples = folds,
                               metrics = metric_set(roc_auc),
                               control = tuned_model)
@@ -92,10 +92,8 @@ rf_final_mod <- fit_resamples(rf_pretune_wf,
 # Model 2: Light GBM
 
 boost_model <- boost_tree(trees = 300,
-                          tree_depth = 4,
-                          learn_rate = .05,
-                          mtry = 15,
-                          min_n = 12
+                          tree_depth = 8,
+                          learn_rate = .2
 ) %>%
   set_engine("lightgbm") %>% #or "xgboost" but lightgbm is faster
   set_mode("classification")
@@ -116,43 +114,52 @@ folds <- vfold_cv(data_train, v = 5, repeats = 1)
 # bestTune <- tuned_boost %>%
 #   select_best('accuracy')
 
-boost_final_mod <- fit_resamples(boost_wf,
+boost_results <- fit_resamples(boost_wf,
                                  resamples = folds,
                                  metrics = metric_set(roc_auc),
                                  control = tuned_model)
 
 
-# Stacked model
+# Model 3: Neural Nets
 
-models_stack <- 
-  stacks() %>%
-  add_candidates(rf_final_mod) %>%
-  add_candidates(boost_final_mod)
+nn_recipe <- recipe(Cover_Type~., data = data_train) %>%
+  step_rm(Id) %>%
+  step_zv(all_numeric_predictors()) %>%
+  step_range(all_numeric_predictors(), min=0, max=1)
 
+nn_model <- mlp(hidden_units = tune(),
+                epochs = 50) %>%
+  set_engine('nnet') %>%
+  set_mode('classification')
 
-# fit stacked model
+nn_wf <- workflow %>%
+  add_recipe(nn_recipe) %>%
+  add_model(nn_model)
 
-models_stack <-
-  models_stack %>%
-  blend_predictions() %>%
-  fit_members()
+nn_tuneGrid <- grid_regular(hidden_units(range=c(1,10)),
+                            levels=5)
 
+# Run CV
+tuned_nn <- nn_wf %>%
+  tune_grid(resamples = folds,
+            grid = nn_tuneGrid,
+            metrics = metric_set(accuracy))
 
-# Prepare preds for kaggle
+bestTune_nn <- tuned_nn %>%
+  select_best('accuracy')
 
-stack_preds <- 
-  stack_mod %>%
-  predict(new_data = data_test, type = 'class') %>% # "class" or "prob"
-  mutate(Id = data_test$Id) %>%
-  mutate(Cover_Type = .pred_class) %>%
-  select(Id, Cover_Type)
+nn_results2 <- nn_wf %>%
+  finalize_workflow(bestTune_nn) %>%
+  fit(data = data_train)
 
 
 # Output as csv
 
-vroom_write(lgbm_predictions_boost, "./data/lgbm_pred_boost.csv", delim = ",")
-# save(file = '.RData', list = c('final_wf'))
-# load('ggg_nn_wf.RData')
+# vroom_write(lgbm_predictions_boost, "./data/lgbm_pred_boost.csv", delim = ",")
+
+save(file = 'RFFinal.RData', list = c('rf_results2'))
+save(file = 'BoostFinal.RData', list = c('boost_results2'))
+save(file = 'NNFinal.RData', list = c('nn_results2'))
 
 
 
