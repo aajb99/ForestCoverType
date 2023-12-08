@@ -47,13 +47,20 @@ data_test <- vroom("./data/test.csv") # grab testing data
 
 rFormula <- Cover_Type ~ .
 
+# fct_recipe <- recipe(Cover_Type ~ ., data = data_train) %>%
+#   update_role(Id, new_role = "Id") %>%
+#   # step_mutate_at(c(12:55), fn = factor) %>%
+#   step_nzv(freq_cut = 15070/50) %>%
+#   step_zv(all_predictors()) %>%
+#   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
+#   #step_normalize(all_numeric_predictors())
+
 fct_recipe <- recipe(Cover_Type ~ ., data = data_train) %>%
   update_role(Id, new_role = "Id") %>%
-  # step_mutate_at(c(12:55), fn = factor) %>%
-  step_nzv(freq_cut = 15070/50) %>%
-  step_zv(all_predictors()) %>%
-  step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
-  #step_normalize(all_numeric_predictors())
+  step_mutate(Id = factor(Id)) %>%
+  step_mutate_at(all_outcomes(), fn = factor, skip = TRUE) %>%
+  step_zv(all_predictors()) #%>%
+  #step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type))
 
 prepped_recipe <- prep(fct_recipe) # preprocessing new data
 baked_data <- bake(prepped_recipe, new_data = data_train)
