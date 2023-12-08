@@ -28,7 +28,9 @@ library(parsnip)
 library(bonsai)
 library(lightgbm)
 library(keras)
+install.packages('baguette')
 library(baguette)
+install.packages('stacks')
 library(stacks)
 ##############################
 
