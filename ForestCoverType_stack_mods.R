@@ -82,11 +82,23 @@ rf_pretune_wf <- workflow() %>%
   add_recipe(fct_recipe) %>%
   add_model(class_rf_mod)
 
+## Grid of values to tune over
+tuning_grid <- grid_regular(mtry(range = c(2,ncol(data_train)-1)),
+                            min_n(),
+                            levels = 3) ## L^2 total tuning possibilities
+
 # Run CV
-rf_final_mod <- fit_resamples(rf_pretune_wf,
-                              resamples = folds,
-                              metrics = metric_set(roc_auc),
-                              control = tuned_model)
+rf_final_mod <- pretune_workflow %>%
+  tune_grid(resamples = folds,
+            grid = tuning_grid,
+            metrics = metric_set(roc_auc))
+
+bestTune <- CV_results %>%
+  select_best('roc_auc')
+
+final_wf <- pretune_workflow %>%
+  finalize_workflow(bestTune) %>%
+  fit(data = data_train)
 
 
 # Model 2: Light GBM
