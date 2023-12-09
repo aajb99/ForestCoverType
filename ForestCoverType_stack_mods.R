@@ -55,12 +55,16 @@ rFormula <- Cover_Type ~ .
 #   step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type)) #%>%
 #   #step_normalize(all_numeric_predictors())
 
-fct_recipe <- recipe(Cover_Type ~ ., data = data_train) %>%
-  update_role(Id, new_role = "Id") %>%
-  step_mutate(Id = factor(Id)) %>%
-  step_mutate_at(all_outcomes(), fn = factor, skip = TRUE) %>%
-  step_zv(all_predictors()) #%>%
-  #step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type))
+# fct_recipe <- recipe(Cover_Type ~ ., data = data_train) %>%
+#   update_role(Id, new_role = "Id") %>%
+#   step_mutate(Id = factor(Id)) %>%
+#   step_mutate_at(all_outcomes(), fn = factor, skip = TRUE) %>%
+#   step_zv(all_predictors()) #%>%
+#   #step_lencode_glm(all_nominal_predictors(), outcome = vars(Cover_Type))
+
+fct_recipe <- recipe(rFormula, data = data_train) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors())
 
 prepped_recipe <- prep(fct_recipe) # preprocessing new data
 baked_data <- bake(prepped_recipe, new_data = data_train)
@@ -100,7 +104,7 @@ rf_final_mod <- rf_pretune_wf %>%
             grid = tuning_grid,
             metrics = metric_set(roc_auc))
 
-bestTune <- CV_results %>%
+bestTune <- rf_final_mod %>%
   select_best('roc_auc')
 
 rf_results1 <- rf_pretune_wf %>%
@@ -108,21 +112,22 @@ rf_results1 <- rf_pretune_wf %>%
   fit(data = data_train)
 
 
-# Model 2: Light GBM
+# Model 2: xg boost
 
-boost_model <- boost_tree(trees = 300,
+xgboost_recipe <- recipe(rFormula, data = data_train) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+boost_model <- boost_tree(trees = 500,
                           tree_depth = 8,
                           learn_rate = .2
 ) %>%
-  set_engine("lightgbm") %>% #or "xgboost" but lightgbm is faster
+  set_engine("xgboost") %>% #or "xgboost" but lightgbm is faster
   set_mode("classification")
 
 boost_wf <- workflow() %>%
-  add_recipe(fct_recipe) %>%
+  add_recipe(xgboost_recipe) %>%
   add_model(boost_model)
-
-# Split data for CV
-folds <- vfold_cv(data_train, v = 5, repeats = 1)
 
 # Run CV
 # tuned_boost <- boost_wf %>%
@@ -162,10 +167,10 @@ nn_tuneGrid <- grid_regular(hidden_units(range=c(1,10)),
 tuned_nn <- nn_wf %>%
   tune_grid(resamples = folds,
             grid = nn_tuneGrid,
-            metrics = metric_set(accuracy))
+            metrics = metric_set(roc_auc))
 
 bestTune_nn <- tuned_nn %>%
-  select_best('accuracy')
+  select_best('roc_auc')
 
 nn_results1 <- nn_wf %>%
   finalize_workflow(bestTune_nn) %>%
