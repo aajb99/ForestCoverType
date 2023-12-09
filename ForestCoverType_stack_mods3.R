@@ -108,21 +108,22 @@ rf_results3 <- rf_pretune_wf %>%
   fit(data = data_train)
 
 
-# Model 2: Light GBM
+# Model 2: xg boost
 
-boost_model <- boost_tree(trees = 200,
-                          tree_depth = 8,
-                          learn_rate = .2
+xgboost_recipe <- recipe(Cover_Type~., data = data_train) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+boost_model <- boost_tree(trees = 500,
+                          tree_depth = 2,
+                          learn_rate = .01
 ) %>%
-  set_engine("lightgbm") %>% #or "xgboost" but lightgbm is faster
+  set_engine("xgboost") %>% #
   set_mode("classification")
 
 boost_wf <- workflow() %>%
-  add_recipe(fct_recipe) %>%
+  add_recipe(xgboost_recipe) %>%
   add_model(boost_model)
-
-# Split data for CV
-folds <- vfold_cv(data_train, v = 5, repeats = 1)
 
 # Run CV
 # tuned_boost <- boost_wf %>%
