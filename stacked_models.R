@@ -34,6 +34,7 @@ library(keras)
 library(baguette)
 # install.packages('stacks')
 library(stacks)
+library(tune)
 ##############################
 
 load('RFFinal.RData')
@@ -50,9 +51,9 @@ data_test <- vroom("./data/test.csv") # grab testing data
 
 models_stack <- 
   stacks() %>%
-  add_candidates(rf_results1) %>%
+  add_candidates(rf_final_mod) %>%
   add_candidates(boost_results1) %>%
-  add_candidates(nn_results1)
+  add_candidates(tuned_nn)
 
 
 # fit stacked model
