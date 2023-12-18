@@ -93,20 +93,11 @@ tuning_grid <- grid_regular(mtry(range = c(2,ncol(data_train)-1)),
                             min_n(),
                             levels = 3) ## L^2 total tuning possibilities
 
-
-# Run CV
-#rf_final_mod <- rf_pretune_wf %>%
-#  tune_grid(resamples = folds,
-#            grid = tuning_grid,
-#            metrics = metric_set(roc_auc))
-
-#bestTune <- rf_final_mod %>%
-#  select_best('roc_auc')
-
-#rf_results1 <- rf_pretune_wf %>%
-#  finalize_workflow(bestTune) %>%
-#  fit(data = data_train)
-
+rf_final_mod <- rf_pretune_wf %>%
+  tune_grid(resamples = folds,
+            grid = tuning_grid,
+            metrics = metric_set(roc_auc),
+            control = untuned_model)
 
 # Model 2: xg boost
 
@@ -125,15 +116,6 @@ boost_model <- boost_tree(trees = 500,
 boost_wf <- workflow() %>%
   add_recipe(xgboost_recipe) %>%
   add_model(boost_model)
-
-# Run CV
-# tuned_boost <- boost_wf %>%
-#   tune_grid(resamples = folds,
-#             grid = boost_tuneGrid,
-#             metrics = metric_set(accuracy))
-# 
-# bestTune <- tuned_boost %>%
-#   select_best('accuracy')
 
 boost_final_mod <- fit_resamples(boost_wf,
                                  resamples = folds,
@@ -159,25 +141,6 @@ nn_wf <- workflow() %>%
 
 nn_tuneGrid <- grid_regular(hidden_units(range=c(1,10)),
                             levels=5)
-
-# Run CV
-#nn_final_mod <- nn_wf %>%
-#  tune_grid(resamples = folds,
-#            grid = nn_tuneGrid,
-#            metrics = metric_set(roc_auc))
-
-#bestTune_nn <- tuned_nn %>%
-#  select_best('roc_auc')
-
-#nn_results1 <- nn_wf %>%
-#  finalize_workflow(bestTune_nn) %>%
-#  fit(data = data_train)
-
-rf_final_mod <- rf_pretune_wf %>%
-  tune_grid(resamples = folds,
-            grid = tuning_grid,
-            metrics = metric_set(roc_auc),
-            control = untuned_model)
 
 nn_final_mod <- nn_wf %>%
   tune_grid(resamples = folds,
